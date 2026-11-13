@@ -14,10 +14,10 @@ setup(
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='warlord',
+    maintainer='Rudra Bhosale',
     maintainer_email='warlord@todo.todo',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Sequential Nav2 waypoint navigation for TurtleBot3',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',

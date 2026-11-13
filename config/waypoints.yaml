@@ -1,0 +1,7 @@
+waypoint_navigator:
+  ros__parameters:
+    use_sim_time: true
+    waypoints: [0.5, 0.5,
+                0.5, -0.5,
+                -0.5, -0.5,
+                -0.5, 0.5]

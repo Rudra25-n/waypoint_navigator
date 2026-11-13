@@ -10,15 +10,10 @@ class WaypointNavigator(Node):
         super().__init__('waypoint_navigator')
         self._client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
-        #defining waypoints As (x,y)
-        self.waypoints = [
-            (0.5, 0.5),
-            (0.5, -0.5),
-            (5.0, 5.0),
-            (-0.5, -0.5),
-            (-0.5, 0.5),
-        
-         ]
+        self.declare_parameter('waypoints', [0.0, 0.0])
+        flat = self.get_parameter('waypoints').value
+        self.waypoints = [(flat[i], flat[i + 1]) for i in range(0, len(flat) - 1, 2)]
+        self.get_logger().info(f'Loaded {len(self.waypoints)} waypoints')
         self.current = 0
         self.succeeded = 0 
 
@@ -34,7 +29,7 @@ class WaypointNavigator(Node):
         goal.pose.pose.position.x = x
         goal.pose.pose.position.y = y
         goal.pose.pose.orientation.w = 1.0
-
+        self.start_time = self.get_clock().now()
         self.get_logger().info(f'Navigating to waypoint{self.current + 1}: ({x},{y})')
         self._client.wait_for_server()
         future = self._client.send_goal_async(goal)
@@ -52,11 +47,12 @@ class WaypointNavigator(Node):
 
     def result_callback(self, future):
         status = future.result().status
+        elapsed = (self.get_clock().now() - self.start_time).nanoseconds / 1e9
         if status == GoalStatus.STATUS_SUCCEEDED:
-            self.get_logger().info(f'Waypoint {self.current + 1} reached!')
+            self.get_logger().info(f'Waypoint {self.current + 1} reached in {elapsed:.1f}s')
             self.succeeded += 1
         else:
-            self.get_logger().warning(f'Waypoint {self.current + 1} FAILED (status {status}), skipping')
+            self.get_logger().warning(f'Waypoint {self.current + 1} FAILED after {elapsed:.1f}s (status {status}), skipping')
         self.current += 1
         self.send_next_waypoint()
 
@@ -65,6 +61,8 @@ class WaypointNavigator(Node):
 def main(args=None):
     rclpy.init(args=args)
     navigator = WaypointNavigator()
+    while rclpy.ok() and navigator.get_clock().now().nanoseconds == 0:
+        rclpy.spin_once(navigator, timeout_sec=0.1)
     navigator.send_next_waypoint()
     rclpy.spin(navigator)
     rclpy.shutdown()
